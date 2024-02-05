@@ -88,6 +88,8 @@ function tcp(){
     if [ $CONTENIDO == "yay" ]; then
 
     clear
+    echo -e "${greenCl}[+] Escaneando la ip ${IP}${endCl}\n"
+
     sudo nmap -p- --open --min-rate 2000 -sS -Pn -n -vvv $IP -oG $ARCHIVO 
 
     echo -e "\n${redCl}[+] Escaneo terminado ${endCl}"
@@ -102,6 +104,7 @@ function tcp(){
     read -p "$(echo -e "${grayCl}nombre del archivo de versiones y servicios: ${endCl}")" SCV
 
     clear
+    echo -e "${greenCl}[+] Escaneando versiones y servicios de los puertos encontrados${endCl}\n"
 
     nmap -p$PUERTOS -sCV -Pn -n $IP -oN $SCV 
 
@@ -121,7 +124,6 @@ function tcp(){
 
     echo -e "${grayCl}Puertos encontrados a escanear: ${PUERTOS} ${endCl}"
     read -p "$(echo -e "${grayCl}nombre del archivo de versiones y servicios: ${endCl}")" SCV
-    #read -p "$(echo -e "${grayCl}Puertos a escanear separados por una coma: ")" PUERTOS
     echo -e "${grayCl}[+] Escaneando versiones y servicios de los puertos:${endCl} $PUERTOS"
     nmap -p$PUERTOS -sCV -Pn -n $IP -oN $SCV &>/dev/null
 
@@ -166,6 +168,114 @@ function tcp(){
     tcp
 
   fi
+}
+
+function udp(){
+
+  local IP
+  local OPTION
+  local ARCHIVO
+  local CONTENIDO
+  local SCV
+  local PUERTOS
+
+  echo -e "${yellowCl}Has elegido escaneo udp${endCl}\n"
+
+  read -p "$( echo -e "${grayCl}Ingresa la ip de la maquina victima: ${endCl}")" IP
+
+  read -p "$( echo -e "${grayCl}Deseas guardar tu escaneo en un archivo yay/nay: ${endCl}")" OPTION
+
+  if [ $OPTION == "yay" ]; then
+
+    read -p "$( echo -e "${grayCl}Que nombre deseas ponerle al archivo: ${endCl}")" ARCHIVO
+
+    read -p "$( echo -e "${grayCl}Mirar por pantalla el contenido del escaneo yay/nay: ${endCl}")" CONTENIDO
+
+    if [ $CONTENIDO == "yay" ]; then
+
+    clear
+    echo -e "${greenCl}[+] Escaneando la ip ${IP}${endCl}\n"
+
+    sudo nmap --top-ports 1000 --open -sU --min-rate 2000 -Pn -n -vvv $IP -oG $ARCHIVO 
+
+    echo -e "\n${redCl}[+] Escaneo terminado ${endCl}"
+
+    read -p "$( echo -e "\n${greenCl}Presiona enter para continuar${endCl}")"
+    
+    clear
+    
+    PUERTOS=$(cat $ARCHIVO | grep -oP '\d{1,5}/open' | awk '{print $1}' FS='/' | xargs | tr ' ' ',')  
+
+    read -p "$(echo -e "${grayCl}nombre del archivo de versiones y servicios: ${endCl}")" SCV
+
+    echo -e "\n${greenCl}[+] Escaneando versiones y servicios de los puertos encontrados${endCl}\n"
+
+    nmap -p$PUERTOS -sCV -Pn -n $IP -oN $SCV 
+
+    echo -e "\n${redCl}[!] Escaneo terminado revisa tus archivos ${endCl}"
+    
+    elif [ $CONTENIDO == "nay" ]; then
+    
+    echo -e "${grayCl}[+] Escanenando los 65535 puertos existentes${endCL}"
+
+    sudo nmap --top-ports 1000 --open -sU --min-rate 2000 -Pn -n -vvv $IP -oG $ARCHIVO &>/dev/null
+
+    echo -e "\n${redCl}[!] Escaneo terminado ${endCL}"
+
+    read -p "$( echo -e "\n${greenCl}Presiona enter para continuar${endCl}")"
+
+    clear
+    
+    PUERTOS=$(cat $ARCHIVO | grep -oP '\d{1,5}/open' | awk '{print $1}' FS='/' | xargs | tr ' ' ',')  
+
+    read -p "$(echo -e "${grayCl}nombre del archivo de versiones y servicios: ${endCl}")" SCV
+
+    echo -e "\n${grayCl}[+] Escaneando versiones y servicios de los puertos encontrados${endCl}"
+
+    nmap -p$PUERTOS -sCV -Pn -n $IP -oN $SCV &>/dev/null
+
+    echo -e "\n${redCl}[!] Escaneo terminado revisa tus archivos ${endCl}"
+    
+    else 
+    
+    clear
+    echo -e "${grayCl}[!] Opcion invalida Verifica escribir${endCl} ${redCl}yay/nay${endCl}"
+    sleep 2
+    clear
+
+    fi
+
+  elif [ $OPTION == "nay" ]; then
+
+    clear
+
+    echo -e "${greenCl}[+] Escaneando la ip ${IP}${endCl}\n"
+
+    sudo nmap --top-ports 1000 --open -sU --min-rate 2000 -Pn -n -vvv $IP -oG escaneo
+
+    read -p "$( echo -e "\n${greenCl}Presiona enter para continuar${endCl}")"
+
+    clear
+
+    PUERTOS=$(cat escaneo | grep -oP '\d{1,5}/open' | awk '{print $1}' FS='/' | xargs | tr ' ' ',')  
+
+    echo -e "${greenCl}[+] Escaneando versiones y servicios de los puertos encontrados${endCl}\n"
+    
+    nmap -p$PUERTOS -sCV -Pn -n $IP
+
+    echo -e "\n${redCl}[!] Escaneo terminado ${endCl}" 
+
+    rm -rf escaneo
+
+  else
+
+    clear
+    echo -e "${grayCl}[!] Opcion invalida verifica escribir${endCl} ${redCl}yay/nay${endCl}"
+    sleep 2
+    clear
+    tcp
+
+  fi
 
 }
 
@@ -203,7 +313,7 @@ function main(){
 
   udp)
     clear
-    tcp
+    udp
     tab
   ;;
 
@@ -229,4 +339,3 @@ function main(){
 }
 
 main
-
